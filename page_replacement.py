@@ -1,106 +1,89 @@
-pages = [6, 0, 12, 0, 30, 4, 2, 30, 32, 1, 20, 15]
-no_fr = int(input("Enter total number of Frames: "))
+no_pages = int(input("Enter total number of Pages: "))
+pages = []
+for i in range(no_pages):
+    page = int(input(f"Enter page {i+1}: "))
+    pages.append(page)
+
+no_frames = int(input("Enter total number of Frames: "))
 
 def fifo(pages, no_fr):
-    frames = [-1] * no_fr
-    in_time = [0] * len(pages)
+    frames = [-1] * no_frames
     miss = 0
     
     print("\nFIFO:")
-    for time, page in enumerate(pages):
-        min_t = in_time[0]
-        oldest_page = 0
-        page_assigned = False
+    
+    for page in pages:
         if page not in frames:
-            for frame_no, frame in enumerate(frames):
-                if frame == -1:
-                    frames[frame_no] = page
-                    in_time[frame_no] = time
-                    page_assigned = True
-                    miss += 1
-                    break
-
-                if in_time[frame_no] < min_t:
-                    min_t = in_time[frame_no]
-                    oldest_page = frame_no
+            if -1 in frames:
+                frame_no = frames.index(-1)
+                frames[frame_no] = page
+            else:
+                frames.pop(0)
+                frames.append(page)
+            miss += 1
+            print("\tMISS", end=" ")
+        else:
+            print("\tHIT", end=" ")
         
-            if not page_assigned:
-                frames[oldest_page] = page
-                in_time[oldest_page] = time
-                miss += 1
-        
-        print("For ", page, "-", frames)
+        print("Frames:", frames)
 
     print(f"\nMisses = {miss}/{len(pages)}")
     print(f"Hits   = {len(pages) - miss}/{len(pages)}")
 
 def lru(pages, no_fr):
-    frames = [-1] * no_fr
-    time_used = [0] * len(pages)
+    frames = [-1] * no_frames
+    time_used = [0] * len(frames)
     miss = 0
 
     print("\nLRU:")
-    for time, page in enumerate(pages):
-        min_t = time_used[0]
-        oldest_used_page = 0
-        page_assigned = False
-
+    for page in pages:
         if page not in frames:
-            for frame_no, frame in enumerate(frames):
-                if frame == -1:
-                    frames[frame_no] = page
-                    time_used[frame_no] = time
-                    page_assigned = True
-                    miss += 1
-                    break
-
-                if time_used[frame_no] < min_t:
-                    min_t = time_used[frame_no]
-                    oldest_used_page = frame_no
-        
-            if not page_assigned:
-                frames[oldest_used_page] = page
-                time_used[oldest_used_page] = time
-                miss += 1
-
+            if -1 in frames:
+                frame_no = frames.index(-1)
+                frames[frame_no] = page
+                time_used[frame_no] = time_used[frame_no - 1] + 1 if frame_no > 0 else 1
+            else:
+                oldest_frame_index = time_used.index(min(time_used))
+                frames[oldest_frame_index] = page
+                time_used[oldest_frame_index] = 1
+            miss += 1
+            print("\tMISS", end=" ")
         else:
-            page_found_at = frames.index(page)
-            time_used[page_found_at] = time
-            
+            frame_index = frames.index(page)
+            time_used[frame_index] += 1
+            print("\tHIT", end=" ")
         
-        print("For ", page, "-", frames)
+        print("Frames:", frames)
 
     print(f"\nMisses = {miss}/{len(pages)}")
     print(f"Hits   = {len(pages) - miss}/{len(pages)}")
 
 
-def optimal(pages, no_fr):
-    frames = [-1] * no_fr
+def optimal(pages, no_frames):
+    frames = [-1] * no_frames
     miss = 0
 
     print("\nOptimal:")
-    for time, page in enumerate(pages):
+    for page in pages:
         if page not in frames:
             if -1 in frames:
                 frame_no = frames.index(-1)
                 frames[frame_no] = page
-                miss += 1
-            
             else:
-                future_pages = pages[time + 1: time + 1 + no_fr]
-                frame_future_freq = [future_pages.count(frame) for frame in frames]
-
-                min_future_freq = min(frame_future_freq)
-                frames[frame_future_freq.index(min_future_freq)] = page
-                miss += 1
+                future_pages = pages[pages.index(page):]
+                indexes = {frame: future_pages.index(frame) if frame in future_pages else len(future_pages) for frame in frames}
+                frame_to_replace = max(indexes, key=indexes.get)
+                frames[frames.index(frame_to_replace)] = page
+            miss += 1
+            print("\tMISS", end=" ")
+        else:
+            print("\tHIT", end=" ")
         
-        print("For ", page, "-", frames)
+        print("Frames:", frames)
 
-    print(f"\nTotal Misses = {miss}/{len(pages)}")
-    print(f"Total Hits   = {len(pages) - miss}/{len(pages)}")
-    pass
+    print(f"\nMisses = {miss}/{len(pages)}")
+    print(f"Hits   = {len(pages) - miss}/{len(pages)}")
 
-
-fifo(pages, no_fr)
-lru(pages, no_fr)
-optimal(pages, no_fr)
+fifo(pages, no_frames)
+lru(pages, no_frames)
+optimal(pages, no_frames)
